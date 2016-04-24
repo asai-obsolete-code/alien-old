@@ -25,6 +25,6 @@
   :depends-on (:trivia :alexandria :iterate :pddl2)
   :components ((:module "src"
                 :components
-                ((:file "package"))))
+                ((:file "0-package"))))
   :description "Return of the Alien Technology to Classical Planning"
   :in-order-to ((test-op (test-op :alien.test))))
