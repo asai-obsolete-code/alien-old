@@ -5,7 +5,7 @@
 
 (in-package :cl-user)
 (defpackage alien
-  (:use :cl :trivia :alexandria :iterate :pddl2))
+  (:use :cl :trivia :alexandria :iterate :pddl2.impl))
 (in-package :alien)
 
 ;; blah blah blah.

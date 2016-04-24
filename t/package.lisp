@@ -8,7 +8,7 @@
   (:use :cl
         :alien
         :fiveam
-        :trivia :alexandria :iterate :pddl2))
+        :trivia :alexandria :iterate :pddl2.impl))
 (in-package :alien.test)
 
 
