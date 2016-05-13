@@ -1,14 +1,23 @@
 
+#|
+
+I try to be abstract as possible.
+This is in order to (possibly) escaping from the notion of OPEN/CLOSED list search.
+
+|#
 
 
 (in-package :alien)
 
-(defun run (storage)
-  (iter (for parent = (fetch storage))
-        (for child in (expand parent))
+(define-condition solution-found ()
+  ((node :initarg :node :reader node)))
+
+(defun step (storage)
+  (iter (for child in (expand (fetch storage)))
         (when (goal-p child)
-          (return child))
-        (send child storage)))
+          (signal 'solution-found :node child))
+        (send child storage))
+  storage)
 
 (defgeneric fetch (storage)
   (:generic-function-class inlined-generic-function))
