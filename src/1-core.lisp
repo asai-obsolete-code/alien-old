@@ -3,21 +3,21 @@
 
 (in-package :alien)
 
-(defun run (open)
-  (iter (for parent = (fetch open))
+(defun run (storage)
+  (iter (for parent = (fetch storage))
         (for child in (expand parent))
         (when (goal-p child)
           (return child))
-        (send child open)))
+        (send child storage)))
 
-(defgeneric fetch (open-list)
+(defgeneric fetch (storage)
   (:generic-function-class inlined-generic-function))
-(defgeneric send  (open-list)
+(defgeneric send  (storage)
   (:generic-function-class inlined-generic-function))
 (defgeneric expand (node)
   (:generic-function-class inlined-generic-function))
 (defgeneric goal-p (node)
   (:generic-function-class inlined-generic-function))
-(defgeneric send  (open-list node)
+(defgeneric send  (storage node)
   (:generic-function-class inlined-generic-function))
 
