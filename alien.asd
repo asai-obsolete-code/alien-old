@@ -22,9 +22,10 @@
   :author "Masataro Asai"
   :mailto "guicho2.71828@gmail.com"
   :license "LLGPL"
-  :depends-on (:trivia :alexandria :iterate :pddl2)
+  :depends-on (:trivia :alexandria :iterate :pddl2 :inlined-generic-function)
   :components ((:module "src"
                 :components
-                ((:file "0-package"))))
+                ((:file "0-package")
+                 (:file "1-core"))))
   :description "Return of the Alien Technology to Classical Planning"
   :in-order-to ((test-op (test-op :alien.test))))
