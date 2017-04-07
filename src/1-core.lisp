@@ -9,28 +9,4 @@ This is in order to (possibly) escaping from the notion of OPEN/CLOSED list sear
 
 (in-package :alien)
 
-(define-condition solution-found ()
-  ((node :initarg :node :reader node)))
-
-(defun step (storage)
-  (let ((children (expand (fetch storage))))
-    (do ((child (fetch children)))
-        ((emptyp children))
-      (when (goal-p child)
-        (signal 'solution-found :node child))
-      (send child storage)))
-  storage)
-
-(defgeneric fetch (storage)
-  (:generic-function-class inlined-generic-function))
-(defgeneric emptyp (storage)
-  (:generic-function-class inlined-generic-function))
-(defgeneric send  (storage)
-  (:generic-function-class inlined-generic-function))
-(defgeneric expand (node)
-  (:generic-function-class inlined-generic-function))
-(defgeneric goal-p (node)
-  (:generic-function-class inlined-generic-function))
-(defgeneric send  (storage node)
-  (:generic-function-class inlined-generic-function))
-
+(define-condition solution-found () ())

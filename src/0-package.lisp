@@ -5,9 +5,7 @@
 
 (in-package :cl-user)
 (defpackage alien
-  (:use :cl :trivia :alexandria :iterate :pddl2.impl
-        :inlined-generic-function)
-  (:shadow :step :emptyp))
+  (:use :cl :trivia :alexandria :iterate))
 (in-package :alien)
 
 ;; blah blah blah.

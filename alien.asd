@@ -4,7 +4,7 @@
  :author "Masataro Asai"
  :mailto "guicho2.71828@gmail.com"
  :license "LLGPL"
- :depends-on (:trivia :alexandria :iterate :pddl2 :inlined-generic-function)
+ :depends-on (:trivia :alexandria :iterate :cl-cudd)
  :components ((:file "src/0-package")
               (:file "src/1-core"))
  :description "Return of the Alien Technology to Classical Planning"
