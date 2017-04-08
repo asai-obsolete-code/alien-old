@@ -5,7 +5,7 @@
 
 (in-package :cl-user)
 (defpackage alien
-  (:use :cl :trivia :alexandria :iterate))
+  (:use :cl :trivia :alexandria :iterate :cl-cudd))
 (in-package :alien)
 
 ;; blah blah blah.
