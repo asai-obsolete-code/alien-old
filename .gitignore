@@ -10,3 +10,5 @@
 *.backup
 /FastDownward/
 /alien
+/output
+/output.sas

@@ -5,7 +5,16 @@
 
 (in-package :cl-user)
 (defpackage alien
-  (:use :cl :trivia :alexandria :iterate :cl-cudd))
+  (:use :cl :trivia :alexandria :iterate :cl-cudd)
+  (:export :solve))
 (in-package :alien)
 
-;; blah blah blah.
+;; common definitions
+
+;; conditions
+
+(define-condition solution-found () ())
+
+(defvar *fd-home* (asdf:system-relative-pathname :alien "FastDownward/"))
+
+

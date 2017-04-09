@@ -8,7 +8,7 @@ exec ros -Q -- $0 "$@"
   #+quicklisp (ql:quickload '(:trivia) :silent t))
 
 (defpackage :ros.script.main.3700525630
-  (:use :cl :trivia))
+  (:use :cl :trivia :alien))
 (in-package :ros.script.main.3700525630)
 
 (defun main (&rest args)

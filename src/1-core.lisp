@@ -9,4 +9,4 @@ This is in order to (possibly) escaping from the notion of OPEN/CLOSED list sear
 
 (in-package :alien)
 
-(define-condition solution-found () ())
+
