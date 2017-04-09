@@ -9,3 +9,4 @@
   ($ #?"time ${*fd-home*}/fast-downward.py --preprocess output.sas" :output t :error-output t)
   ;; ($ #?"mv output ${path}")
   (sas-parser:parse "output"))
+

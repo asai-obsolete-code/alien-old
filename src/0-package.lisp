@@ -11,10 +11,7 @@
 
 ;; common definitions
 
-;; conditions
-
 (define-condition solution-found () ())
 
 (defvar *fd-home* (asdf:system-relative-pathname :alien "FastDownward/"))
-
 
