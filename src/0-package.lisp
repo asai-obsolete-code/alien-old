@@ -5,7 +5,8 @@
 
 (in-package :cl-user)
 (defpackage alien
-  (:use :cl :trivia :alexandria :iterate :cl-cudd)
+  (:use :cl :trivia :alexandria :iterate :cl-cudd :sas-parser)
+  (:shadowing-import-from :sas-parser :variable)
   (:export :solve))
 (in-package :alien)
 
