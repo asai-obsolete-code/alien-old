@@ -18,7 +18,6 @@
               :cl-syntax-interpol)
  :components ((:file "src/0-package")
               (:file "src/0-util")
-              (:file "src/1-external")
-              (:file "src/2-core"))
+              (:file "src/1-external"))
  :description "Return of the Alien Technology to Classical Planning"
  :in-order-to ((test-op (test-op :alien.test))))
