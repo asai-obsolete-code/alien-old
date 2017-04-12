@@ -19,8 +19,3 @@
 
 (defvar *fd-home* (asdf:system-relative-pathname :alien "FastDownward/"))
 
-(defvar *states*)
-
-(defvar *operators*)
-
-
