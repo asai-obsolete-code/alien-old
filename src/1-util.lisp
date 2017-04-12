@@ -12,3 +12,6 @@
   `(progn ,@body))
 
 (setf (fdefinition '$) #'uiop:run-program)
+
+(defun power-of-2-p (x)
+  (= 1 (logcount x)))

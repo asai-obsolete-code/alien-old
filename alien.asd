@@ -11,13 +11,16 @@
  :mailto "guicho2.71828@gmail.com"
  :license "LLGPL"
  :depends-on (:trivia
+              :arrow-macros
               :alexandria
               :iterate
               :cl-cudd
               :sas-parser
               :cl-syntax-interpol)
  :components ((:file "src/0-package")
-              (:file "src/0-util")
-              (:file "src/1-external"))
+              (:file "src/1-external")
+              (:file "src/1-util")
+              (:file "src/1-variables")
+              (:file "src/9-solve"))
  :description "Return of the Alien Technology to Classical Planning"
  :in-order-to ((test-op (test-op :alien.test))))

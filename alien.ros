@@ -11,15 +11,24 @@ exec ros -Q -- $0 "$@"
   (:use :cl :trivia :alien))
 (in-package :ros.script.main.3700525630)
 
+(defvar *domain* nil)
+(defvar *problem* nil)
+
 (defun main (&rest args)
+  (main2 args))
+(defun main2 (args)
   (match args
-    ((list* "-f" option-file args)
+    ((list* "-l" option-file args)
      (load option-file)
-     (apply #'main args))
-    ((list domain problem)
-     (solve domain problem))
+     (main2 args))
+    ((list* "-d" *domain* args)  (main2 args))
+    ((list* "-f" *problem* args) (main2 args))
+    ((list* "-o" *output* args)  (main2 args))
+    (nil
+     (solve *problem* *domain*))
     (_
-     (format *error-output* "~a [-f option-file] domain-file problem-file" (first ros:*argv*)))))
+     (format *error-output* "~a [-l option-file] [-d domain-file] [-f problem-file] [-o output-file]"
+             (first ros:*argv*)))))
 
 
 

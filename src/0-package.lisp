@@ -5,9 +5,12 @@
 
 (in-package :cl-user)
 (defpackage alien
-  (:use :cl :trivia :alexandria :iterate :cl-cudd :sas-parser)
+  (:use :cl :trivia :alexandria :iterate :cl-cudd :sas-parser :arrow-macros)
   (:shadowing-import-from :sas-parser :variable)
-  (:export :solve))
+  (:shadowing-import-from :trivia :<>)
+  (:export :solve :find-domain
+           :fd-preprocess
+           :solution-found))
 (in-package :alien)
 
 ;; common definitions
@@ -15,4 +18,9 @@
 (define-condition solution-found () ())
 
 (defvar *fd-home* (asdf:system-relative-pathname :alien "FastDownward/"))
+
+(defvar *states*)
+
+(defvar *operators*)
+
 

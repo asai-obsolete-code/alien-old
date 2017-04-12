@@ -17,12 +17,13 @@
            (make-pathname :defaults problem-path :name (format nil "~a-domain" (pathname-name problem-path))))))
 
 (defun fd-preprocess (problem &optional domain)
-  (let ((domain (or domain (find-domain problem))))
-    (assert (probe-file domain))
-    ($ "echo $PWD" :output t :error-output t)
-    ($ #?"time ${*fd-home*}/fast-downward.py --translate ${domain} ${problem}" :output t :error-output t)
-    (sas-parser:parse "output.sas")
-    #+nil ($ #?"time ${*fd-home*}/fast-downward.py --preprocess output.sas" :output t :error-output t)
-    #+nil ($ #?"mv output ${path}")
-    #+nil (sas-parser:parse "output")))
+  (unless domain
+    (setf domain (find-domain problem)))
+  (assert (probe-file domain))
+  ($ "echo $PWD" :output t :error-output t)
+  ($ #?"time ${*fd-home*}/fast-downward.py --translate ${domain} ${problem}" :output t :error-output t)
+  (sas-parser:parse "output.sas")
+  #+nil ($ #?"time ${*fd-home*}/fast-downward.py --preprocess output.sas" :output t :error-output t)
+  #+nil ($ #?"mv output ${path}")
+  #+nil (sas-parser:parse "output"))
 
