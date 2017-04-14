@@ -96,12 +96,12 @@ with-manager
 
 
 (defun encode-goals (goals)
-  (make-op :pre (zdd-set-of-emptyset)
-           :add (zdd-by-integer
+  (make-op :pre (zdd-by-integer
                  (iter (with result = 0)
-                       (for value in-vector init with-index i)
-                       (setf result (logior result (encode-value i value)))
+                       (for (var . val) in-vector goals)
+                       (setf result (logior result (encode-value var val)))
                        (finally (return result))))
+           :add (zdd-set-of-emptyset)
            :del (zdd-set-of-emptyset)
            :cost 0))
 
