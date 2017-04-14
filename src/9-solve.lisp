@@ -3,6 +3,7 @@
 
 
 (defun solve (problem &optional domain)
-  (-> (fd-preprocess problem domain)
-    (encode-sas-to-zdd)
-    (run-search)))
+  (with-manager ()
+    (-> (fd-preprocess problem domain)
+      (encode-sas-to-zdd)
+      (run-search))))

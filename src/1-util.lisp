@@ -15,3 +15,6 @@
 
 (defun power-of-2-p (x)
   (= 1 (logcount x)))
+
+(defun required (&optional message)
+  (error "Missing a required slot"))

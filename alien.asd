@@ -21,6 +21,10 @@
               (:file "src/1-external")
               (:file "src/1-util")
               (:file "src/1-variables")
+              (:file "src/2-encode")
+              (:file "src/3-search")
+              (:file "src/4-1-heuristics")
+              (:file "src/4-2-search-rule")
               (:file "src/9-solve"))
  :description "Return of the Alien Technology to Classical Planning"
  :in-order-to ((test-op (test-op :alien.test))))
