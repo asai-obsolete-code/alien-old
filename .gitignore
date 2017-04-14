@@ -6,7 +6,8 @@
 *.lx64fsl
 *.x86f
 *~
-.#*
+#*
+*/#*
 *.backup
 /FastDownward/
 /alien
