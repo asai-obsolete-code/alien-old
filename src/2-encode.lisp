@@ -49,11 +49,12 @@
      (make-task :operators (map 'vector #'encode-operator operators)
                 :init      (encode-init init)
                 :goals     (encode-goals goals)
-                :mutex-groups (encode-mutex-groups mutex-groups)))))
+                ;; :mutex-groups (encode-mutex-groups mutex-groups)
+                ))))
 
 ;; (defvar *operators* nil
 ;;   "A special variable holding the operator zdd.")
-with-manager
+
 (defun zdd-change-by-integer (zdd int)
   (iter (for i below (integer-length int))
         (when (logbitp i int)
