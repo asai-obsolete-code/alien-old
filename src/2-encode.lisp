@@ -43,17 +43,16 @@
   (match *sas*
     ((sas variables
           operators
+          axioms
           init
           goals
           mutex-groups)
      (make-task :operators (map 'vector #'encode-operator operators)
+                :axioms    (map 'vector #'encode-operator axioms)
                 :init-op   (encode-init-op init)
                 :goal-op   (encode-goal-op goals)
                 ;; :mutex-groups (encode-mutex-groups mutex-groups)
                 ))))
-
-;; (defvar *operators* nil
-;;   "A special variable holding the operator zdd.")
 
 (defun zdd-change-by-integer (zdd int)
   (iter (for i below (integer-length int))
