@@ -101,3 +101,18 @@
 
 ;; define a recursive procedure for action application?
 
+(defun apply-ops (ops states)
+  (%apply ops states 0))
+(defun %apply (ops states var)
+  (with-renaming ((- zdd-difference)
+                  (+ zdd-union)
+                  (/ zdd-divide-binate)
+                  (* zdd-product-binate)
+                  (_1 zdd-onset)
+                  (_0 zdd-offset)
+                  )
+  (-> (zdd-set-of-emptyset)
+    (zdd-union (%apply (_1 states (zref 'states var 0))
+                       (_1 (_1 ops (zref 'operators var 0))
+                           (zref 'operators var 2))
+                       (1+ var))))))
