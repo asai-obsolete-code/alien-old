@@ -19,6 +19,7 @@
               :cl-syntax-interpol)
  :components ((:file "src/0-package")
               (:file "src/1-external")
+              (:file "src/1-schema")
               (:file "src/1-util")
               (:file "src/1-variables")
               (:file "src/2-encode")
