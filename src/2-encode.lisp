@@ -35,8 +35,8 @@
 
 (defstruct task
   (operators (required) :type (array op))
-  (init      (required) :type op)
-  (goals     (required) :type op)
+  (init-op   (required) :type op)
+  (goal-op   (required) :type op)
   mutex-groups)
 
 (defun encode-sas-to-zdd ()
@@ -47,8 +47,8 @@
           goals
           mutex-groups)
      (make-task :operators (map 'vector #'encode-operator operators)
-                :init      (encode-init init)
-                :goals     (encode-goals goals)
+                :init-op   (encode-init-op init)
+                :goal-op   (encode-goal-op goals)
                 ;; :mutex-groups (encode-mutex-groups mutex-groups)
                 ))))
 
@@ -69,7 +69,7 @@
     ((operator prevail effects cost)
      (let ((_pre 0)
            (_add 0)
-           (_del 0))
+           (_del 0))                    ;TODO: effect condition
        (iter (for (var . val) in-vector prevail)
              (setf _pre (logior _pre (encode-value var val))))
        (iter (for e in-vector effects)
@@ -85,7 +85,7 @@
                 :del (zdd-by-integer _del)
                 :cost cost)))))
 
-(defun encode-init (init)
+(defun encode-init-op (init)
   (make-op :pre (zdd-set-of-emptyset)
            :add (zdd-by-integer
                  (iter (with result = 0)
@@ -96,7 +96,7 @@
            :cost 0))
 
 
-(defun encode-goals (goals)
+(defun encode-goal-op (goals)
   (make-op :pre (zdd-by-integer
                  (iter (with result = 0)
                        (for (var . val) in-vector goals)
@@ -105,4 +105,25 @@
            :add (zdd-set-of-emptyset)
            :del (zdd-set-of-emptyset)
            :cost 0))
+
+(defun apply-op (op states)
+  (with-renaming ((- zdd-difference)
+                  (+ zdd-union)
+                  (/ zdd-divide-binate)
+                  (* zdd-product-binate))
+    (match op
+      ((op pre add del)
+       (+ (- (* pre (/ states pre)) del) add)))))
+
+(defun apply-axiom (op states)
+  "cf. Helmert09 aij p11 Sec 2 Definition 5 algorithm evaluate-axioms"
+  (with-renaming ((- zdd-difference)
+                  (+ zdd-union)
+                  (/ zdd-divide-binate)
+                  (* zdd-product-binate))
+    (match op
+      ((op pre add del)
+       (+ (- (* pre (/ states pre)) del) add)))))
+
+;; define a recursive procedure for action application?
 
