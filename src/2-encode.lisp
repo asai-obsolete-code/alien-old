@@ -29,10 +29,20 @@
                                        (collect (binate))))))))))))
 
 
-
-
-
-
+(defun operator-schema ()
+  (match *sas*
+    ((sas variables)
+     (schema nil
+             (iter (for v in-vector variables)
+                   (collect
+                      (match v
+                        ((variable name values)
+                         (schema name
+                                 (iter (for i below (ceiling (log (length values) 2)))
+                                       (collect (schema :true))
+                                       (collect (schema :false))
+                                       (collect (schema :add))
+                                       (collect (schema :del))))))))))))
 
 (defun encode-sas-to-zdd ()
   (match *sas*
