@@ -15,6 +15,25 @@
   (goal-op   (required) :type op)
   mutex-groups)
 
+
+(defun state-schema ()
+  (match *sas*
+    ((sas variables)
+     (schema nil
+             (iter (for v in-vector variables)
+                   (collect
+                      (match v
+                        ((variable name values)
+                         (schema name
+                                 (iter (for i below (ceiling (log (length values) 2)))
+                                       (collect (binate))))))))))))
+
+
+
+
+
+
+
 (defun encode-sas-to-zdd ()
   (match *sas*
     ((sas variables
