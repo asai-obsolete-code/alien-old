@@ -120,3 +120,12 @@ alternative encoding?  ------- not useful for binate zdd
 
 
 |#
+
+;;;; operator encoding
+
+(defun operator-unate ()
+  "returns a list of variable encoding length"
+  (match *sas*
+    ((sas operators)
+     ;; +2 because of init/goal op
+     (ceiling (log (+ 2 (length operators)) 2)))))
