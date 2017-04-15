@@ -44,6 +44,9 @@
                                        (collect (schema :add))
                                        (collect (schema :del))))))))))))
 
+(defparameter *operator-schema* (operator-schema))
+(defparameter *state-schema*   (state-schema))
+
 (defun encode-sas-to-zdd ()
   (match *sas*
     ((sas variables
