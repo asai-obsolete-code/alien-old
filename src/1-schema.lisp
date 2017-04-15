@@ -13,14 +13,15 @@
     (%children-bt (trivialib.red-black-tree:leaf) :type trivialib.red-black-tree:rb-tree)))
 
 (defun schema (name &rest children)
-  (if children
-      (make-schema :name name
-                   :size (reduce #'+ children :key #'schema-size)
-                   :children (coerce children 'simple-vector)
-                   :offsets (let ((acc 0))
-                              (map 'vector (lambda (x) (prog1 acc (incf acc (schema-size x)))) children))
-                   #+ng :%children-bt #+ng (make-bt children))
-      (make-schema :name name)))
+  (let ((children (flatten children)))
+    (if children
+        (make-schema :name name
+                     :size (reduce #'+ children :key #'schema-size)
+                     :children (coerce children 'simple-vector)
+                     :offsets (let ((acc 0))
+                                (map 'vector (lambda (x) (prog1 acc (incf acc (schema-size x)))) children))
+                     #+ng :%children-bt #+ng (make-bt children))
+        (make-schema :name name))))
 
 (defun unate (&optional name) (schema name))
 (defun binate (&optional name) (schema name (schema :true) (schema :false)))
