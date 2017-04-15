@@ -19,8 +19,38 @@
 ;; run test with (run! test-name) 
 
 (test alien
-
-  )
+  (finishes
+    (schema nil
+            (schema nil)
+            (schema nil
+                    (schema nil)
+                    (schema nil))
+            (schema nil)
+            (schema nil
+                    (schema nil)
+                    (schema nil))))
+  (is (= 4
+         (schema-index (schema nil
+                               (schema nil)
+                               (schema nil
+                                       (schema nil)
+                                       (schema nil))
+                               (schema nil)
+                               (schema nil
+                                       (schema nil)
+                                       (schema nil)))
+                       '(3 0))))
+  (is (= 4
+         (schema-index (schema nil
+                               (schema nil)
+                               (schema nil
+                                       (schema nil)
+                                       (schema nil))
+                               (schema nil)
+                               (schema :last
+                                       (schema :true)
+                                       (schema nil)))
+                       '(:last :true)))))
 
 
 

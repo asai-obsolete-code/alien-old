@@ -3,13 +3,14 @@
 
 ;;;; zdd variable schema
 
-(defstruct schema
-  name
-  (size 1 :type integer)
-  (children (vector) :type (array schema))
-  (offsets (vector) :type (array integer))
-  #+ng
-  (%children-bt (trivialib.red-black-tree:leaf) :type trivialib.red-black-tree:rb-tree))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defstruct schema
+    name
+    (size 1 :type integer)
+    (children (vector) :type (array schema))
+    (offsets (vector) :type (array integer))
+    #+ng
+    (%children-bt (trivialib.red-black-tree:leaf) :type trivialib.red-black-tree:rb-tree)))
 
 (defun schema (name &rest children)
   (if children
@@ -24,15 +25,6 @@
 (defun unate (&optional name) (schema name))
 (defun binate (&optional name) (schema name (schema :true) (schema :false)))
 
-#+example
-(print
- (schema (leaf)
-         (schema (leaf)
-                 (leaf))
-         (leaf)
-         (schema (leaf)
-                 (leaf))))
-
 (defun schema-index (schema indices)
   (ematch* (schema indices)
     (((schema :children (vector)) nil)
@@ -41,15 +33,11 @@
      (+ (aref offsets index)
         (schema-index (aref children index) more-indices)))
     (((schema children offsets) (list* name more-indices))
-     (+ (aref offsets index)
-        (schema-index (find index children :key #'schema-name) more-indices)))))
-
-#+example
-(schema-index (schema (leaf)
-                      (schema (leaf)
-                              (leaf))
-                      (schema (leaf)
-                              (leaf))) '(2 0))
+     (iter (for c in-vector children with-index index)
+           (when (equal (schema-name c) name)
+             (return
+               (+ (aref offsets index)
+                  (schema-index (aref children index) more-indices))))))))
 
 #+ng
 (defun make-bt (children)

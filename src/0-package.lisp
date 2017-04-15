@@ -10,7 +10,11 @@
   (:shadowing-import-from :trivia :<>)
   (:export :solve :find-domain
            :fd-preprocess
-           :solution-found))
+           :solution-found
+           :schema
+           :unate
+           :binate
+           :schema-index))
 (in-package :alien)
 
 ;; common definitions

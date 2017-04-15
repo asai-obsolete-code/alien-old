@@ -10,6 +10,7 @@
 
 (defstruct task
   (operators (required) :type (array op))
+  (axioms    (required) :type (array op))
   (init-op   (required) :type op)
   (goal-op   (required) :type op)
   mutex-groups)
