@@ -2,6 +2,9 @@
 (in-package :alien)
 
 (defvar *task*)
+(defvar *states* nil
+  "A special variable holding the closed/open list dd.")
+
 (defun run-search (*task*)
   "BFS"
   (match *task*
