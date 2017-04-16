@@ -79,10 +79,14 @@
                                  (finally
                                   (return
                                     (iter (for axioms in-vector layers)
-                                        (when axioms
-                                          (collecting
-                                           (reduce #'zdd-union axioms :key #'encode-operator)
-                                           result-type 'vector))))))
+                                          (when (first-iteration-p)
+                                            (collecting
+                                             (encode-default-op init variables)
+                                             result-type 'vector))
+                                          (when axioms
+                                            (collecting
+                                             (reduce #'zdd-union axioms :key #'encode-operator)
+                                             result-type 'vector))))))
                 :init-op   (encode-init-op init)
                 :goal-op   (encode-goal-op goals)))))
 
@@ -132,6 +136,15 @@
   (iter (with zdd = (zdd-set-of-emptyset))
         (for (var . val) in-vector goals)
         (setf zdd (encode-condition zdd var val))
+        (finally (return zdd))))
+
+(defun encode-default-op (init variables)
+  "Encode a defaulting operation for derived variables, used before evaluating axioms."
+  (iter (with zdd = (zdd-set-of-emptyset))
+        (for val      in-vector init       with-index var)
+        (for variable in-vector variables)
+        (when (>= (variable-axiom-layer variable) 0)
+          (setf zdd (encode-effect zdd var val)))
         (finally (return zdd))))
 
 ;;;; apply operation
@@ -201,52 +214,12 @@
 
 ;;;; evaluate axioms
 
-(defun apply-axioms (ops states)
+(defun apply-axioms (axiom-layers states)
   "cf. Helmert09 aij p11 Sec 2 Definition 5 algorithm evaluate-axioms"
   (let ((*apply-cache* (make-hash-table :test 'equalp)))
-    (%applyx ops states 0)))
+    (iter (for axioms in-vector axiom-layers)
+          (iter (for tmp = (%apply axioms states 0))
+                (until (node-equal states tmp))
+                (setf states tmp)))
+    states))
 
-(defun %applyx (ops states index)
-  (cond
-    ((<= (schema-size (schema-ref *state-schema* +body+)) index) states)
-    ((node-equal (zdd-emptyset) ops)    states)
-    ((node-equal (zdd-emptyset) states) states)
-    (t
-     (let ((key (apply-cache-key states ops index)))
-       (match (gethash key *apply-cache*)
-         (nil
-          (setf (gethash key *apply-cache*) (%%applyx ops states index)))
-         (result
-          result))))))
-
-(defun %%applyx (ops states index)
-  (flet ((si ()  (+ (schema-index *state-schema* +body+) index)) ;skips variable schema
-         (oi (x) (+ (schema-index *operator-schema* +body+) (* 4 index) x)))
-    (with-renaming ((+ zdd-union)
-                    (_1 zdd-onset)
-                    (_0 zdd-offset)
-                    (set zdd-set)
-                    (unset zdd-unset))
-      (-> (zdd-emptyset)
-        (+ (%apply (-> states (_1 (si)))
-                   ;;^^^ O(1) op since INDEX is always the top node
-                   (-> ops    (_1 (oi +true+)) (_1 (oi +del+)))
-                   ;;^^^ O(1) too -- +del+ may require x8 operations
-                   ;; When +true+ is true, +false+ should be false.
-                   ;; also when +del+ is true, +add+ should be false.
-                   (1+ index)))
-        ;; (+ (-> (%apply (-> states (_0 (si)))
-        ;;                ;;^^^ O(1) op since INDEX is always the top node
-        ;;                (-> ops    (_1 (oi +false+)) (_1 (oi +add+)))
-        ;;                (1+ index))
-        ;;      (set (si))))
-        ;; (+ (-> (%apply (-> states (_1 (si)))
-        ;;                (-> ops    (_1 (oi +true+)) (_0 (oi +del+)))
-        ;;                ;; this allows +add+ to be 0 or 1.
-        ;;                ;; due to this operation, INDEX is no longer the top node index in OPERATOR
-        ;;                (1+ index))
-        ;;      (set (si))))
-        ;; (+ (%apply (-> states (_0 (si)))
-        ;;            (-> ops    (_1 (oi +false+)) (_0 (oi +add+)))
-        ;;            (1+ index)))
-        ))))
