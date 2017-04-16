@@ -5,10 +5,11 @@
 
 (defstruct task
   (operators (required) :type cudd:zdd-node)
-  (axioms    (required) :type cudd:zdd-node)
+  (axioms    (required) :type (array cudd:zdd-node))
   (init-op   (required) :type cudd:zdd-node)
   (goal-op   (required) :type cudd:zdd-node)
-  mutex-groups)
+  ;; mutex-groups
+  (axiom-layers (required) :type array))
 
 ;;;; schema definition
 
@@ -70,11 +71,29 @@
           goals
           mutex-groups)
      (make-task :operators (reduce #'zdd-union operators :key #'encode-operator)
-                :axioms    (reduce #'zdd-union axioms :key #'encode-operator)
+                :axioms    (iter (with layers = (make-array (length variables) :initial-element nil))
+                                 (for ax in-vector axioms)
+                                 (push ax (aref layers (ematch ax
+                                                         ((operator (effects (vector (effect affected))))
+                                                          (match (aref variables affected)
+                                                            ((variable axiom-layer)
+                                                             axiom-layer))))))
+                                 (finally
+                                  (return
+                                    (iter (for axioms in-vector layers)
+                                        (when axioms
+                                          (collecting
+                                           (reduce #'zdd-union axioms :key #'encode-operator)
+                                           result-type 'vector))))))
                 :init-op   (encode-init-op init)
                 :goal-op   (encode-goal-op goals)
                 ;; :mutex-groups (encode-mutex-groups mutex-groups)
-                ))))
+                :axiom-layers (iter (with layers = (make-array (length variables) :initial-element nil))
+                                    (for v in-vector variables with-index i)
+                                    (match v
+                                      ((variable :axiom-layer (and l (>= 0)))
+                                       (push (aref layers l) i)))
+                                    (finally (return layers)))))))
 
 (defun encode-condition (zdd var val)
   (iter (for i below (integer-length val))
@@ -156,13 +175,13 @@
           result))))))
 
 (defun %%apply (ops states index)
-  (with-renaming ((+ zdd-union)
-                  (_1 zdd-onset)
-                  (_0 zdd-offset)
-                  (set zdd-set)
-                  (unset zdd-unset))
-    (flet ((si ()  (+ (schema-index *state-schema* +body+) index)) ;skips variable schema
-           (oi (x) (+ (schema-index *operator-schema* +body+) (* 4 index) x)))
+  (flet ((si ()  (+ (schema-index *state-schema* +body+) index)) ;skips variable schema
+         (oi (x) (+ (schema-index *operator-schema* +body+) (* 4 index) x)))
+    (with-renaming ((+ zdd-union)
+                    (_1 zdd-onset)
+                    (_0 zdd-offset)
+                    (set zdd-set)
+                    (unset zdd-unset))
       ;; Apply operation should be linear in the zdd size.
       ;; 
       ;; Note: operators use a binate representation;
@@ -211,21 +230,21 @@
           result))))))
 
 (defun %%applyx (ops states index)
-  (with-renaming ((+ zdd-union)
-                  (_1 zdd-onset)
-                  (_0 zdd-offset)
-                  (set zdd-set)
-                  (unset zdd-unset))
-    (flet ((si ()  (+ (schema-index *state-schema* +body+) index)) ;skips variable schema
-           (oi (x) (+ (schema-index *operator-schema* +body+) (* 4 index) x)))
+  (flet ((si ()  (+ (schema-index *state-schema* +body+) index)) ;skips variable schema
+         (oi (x) (+ (schema-index *operator-schema* +body+) (* 4 index) x)))
+    (with-renaming ((+ zdd-union)
+                    (_1 zdd-onset)
+                    (_0 zdd-offset)
+                    (set zdd-set)
+                    (unset zdd-unset))
       (-> (zdd-emptyset)
-        ;; (+ (%apply (-> states (_1 (si)))
-        ;;            ;;^^^ O(1) op since INDEX is always the top node
-        ;;            (-> ops    (_1 (oi +true+)) (_1 (oi +del+)))
-        ;;            ;;^^^ O(1) too -- +del+ may require x8 operations
-        ;;            ;; When +true+ is true, +false+ should be false.
-        ;;            ;; also when +del+ is true, +add+ should be false.
-        ;;            (1+ index)))
+        (+ (%apply (-> states (_1 (si)))
+                   ;;^^^ O(1) op since INDEX is always the top node
+                   (-> ops    (_1 (oi +true+)) (_1 (oi +del+)))
+                   ;;^^^ O(1) too -- +del+ may require x8 operations
+                   ;; When +true+ is true, +false+ should be false.
+                   ;; also when +del+ is true, +add+ should be false.
+                   (1+ index)))
         ;; (+ (-> (%apply (-> states (_0 (si)))
         ;;                ;;^^^ O(1) op since INDEX is always the top node
         ;;                (-> ops    (_1 (oi +false+)) (_1 (oi +add+)))
