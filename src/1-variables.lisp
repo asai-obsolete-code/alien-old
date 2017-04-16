@@ -4,7 +4,7 @@
 
 ;; (defvar *sas*)
 ;; (defparameter *sas* (fd-preprocess #p"sets/aaai16-opt/blocks/p01.pddl"))
-(defparameter *sas* (fd-preprocess (asdf:system-relative-pathname :alien "sets/aaai16-opt/airport/p01.pddl")))
+(defparameter *sas* (fd-preprocess (asdf:system-relative-pathname :alien "sets/misc-adl/psr-middle/p01.pddl")))
 
 (define-symbol-macro %variables% (sas-variables *sas*))
 
