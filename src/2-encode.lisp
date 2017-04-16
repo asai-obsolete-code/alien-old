@@ -7,7 +7,9 @@
   (operators (required) :type cudd:zdd-node)
   (axioms    (required) :type (array cudd:zdd-node))
   (init-op   (required) :type cudd:zdd-node)
-  (goal-op   (required) :type cudd:zdd-node))
+  (goal-op   (required) :type cudd:zdd-node)
+  (state-schema (required) :type schema)
+  (operator-schema (required) :type schema))
 
 ;;;; schema definition
 
@@ -60,7 +62,10 @@
 
 ;;;; encode SAS into ZDD
 
-(defun encode-sas-to-zdd ()
+(defun encode-sas-to-zdd (&optional (*sas* *sas*)
+                          &aux
+                            (*operator-schema* (operator-schema))
+                            (*state-schema* (state-schema)))
   (match *sas*
     ((sas variables
           operators
@@ -88,7 +93,9 @@
                                              (reduce #'zdd-union axioms :key #'encode-operator)
                                              result-type 'vector))))))
                 :init-op   (encode-init-op init)
-                :goal-op   (encode-goal-op goals)))))
+                :goal-op   (encode-goal-op goals)
+                :state-schema *state-schema*
+                :operator-schema *operator-schema*))))
 
 (defun encode-condition (zdd var val)
   (iter (for i below (integer-length val))
