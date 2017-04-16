@@ -1,12 +1,16 @@
 
 (in-package :alien)
 
+;;;; task definition
+
 (defstruct task
   (operators (required) :type (array op))
   (axioms    (required) :type (array op))
   (init-op   (required) :type op)
   (goal-op   (required) :type op)
   mutex-groups)
+
+;;;; schema definition
 
 (defconstant +true+ 0)
 (defconstant +false+ 1)
@@ -55,6 +59,8 @@
 (defparameter *operator-schema* (operator-schema))
 (defparameter *state-schema*   (state-schema))
 
+;;;; encode SAS into ZDD
+
 (defun encode-sas-to-zdd ()
   (match *sas*
     ((sas variables
@@ -63,116 +69,173 @@
           init
           goals
           mutex-groups)
-     (make-task :operators (map 'vector #'encode-operator operators)
-                :axioms    (map 'vector #'encode-operator axioms)
+     (make-task :operators (reduce #'zdd-union operators :key #'encode-operator)
+                :axioms    (reduce #'zdd-union axioms :key #'encode-axioms)
                 :init-op   (encode-init-op init)
                 :goal-op   (encode-goal-op goals)
                 ;; :mutex-groups (encode-mutex-groups mutex-groups)
                 ))))
 
-(defun zdd-change-by-integer (zdd int)
-  (iter (for i below (integer-length int))
-        (when (logbitp i int)
-          (setf zdd (zdd-change zdd i))))
+(defun encode-condition (zdd var val)
+  (iter (for i below (integer-length val))
+        (setf zdd (! zdd (schema-index
+                          *operator-schema*
+                          +body+ var i (if (logbitp i val) +true+ +false+)))))
+  zdd)
+(defun encode-effect (zdd var val)
+  (iter (for i below (integer-length val))
+        (setf zdd (! zdd (schema-index
+                          *operator-schema*
+                          +body+ var i (if (logbitp i val) +add+ +del+)))))
   zdd)
 
-(defun zdd-by-integer (int)
-  (zdd-change-by-integer (zdd-set-of-emptyset) int))
-
 (defun encode-operator (operator)
-  (ematch operator
-    ((operator prevail effects cost)
-     (let ((_pre 0)
-           (_add 0)
-           (_del 0))                    ;TODO: effect condition
-       (iter (for (var . val) in-vector prevail)
-             (setf _pre (logior _pre (encode-value var val))))
-       (iter (for e in-vector effects)
-             (match e
-               ((effect conditions affected require newval)
-                (when (plusp require)
-                  (let ((val (encode-value affected require)))
-                    (setf _pre (logior _pre val))
-                    (setf _del (logior _del val))))
-                (setf _add (logior _add (encode-value affected newval))))))
-       (make-op :pre (zdd-by-integer _pre)
-                :add (zdd-by-integer _add)
-                :del (zdd-by-integer _del)
-                :cost cost)))))
+  (with-renaming ((! zdd-change))
+    (ematch operator
+      ((operator prevail effects cost)
+       (let ((zdd (zdd-set-of-emptyset)))
+         (iter (for (var . val) in-vector prevail)
+               (setf zdd (encode-condition zdd var val)))
+         (iter (for e in-vector effects)
+               (match e
+                 ((effect conditions affected require newval)
+                  (when (plusp require)
+                    (setf zdd (encode-condition zdd affected require)))
+                  (setf zdd
+                        (if-then-else (iter (with zdd = (zdd-set-of-emptyset))
+                                            (for (var . val) in-vector conditions)
+                                            (setf zdd (encode-condition zdd var val))
+                                            (finally (return zdd)))
+                                      (encode-effect zdd affected newval)
+                                      zdd)))))
+         (iter (for i below (integer-length cost))
+               (when (logbitp i val)
+                 (setf zdd (! zdd (schema-index *operator-schema* +cost+ i)))))
+         zdd)))))
 
 (defun encode-init-op (init)
-  (make-op :pre (zdd-set-of-emptyset)
-           :add (zdd-by-integer
-                 (iter (with result = 0)
-                       (for value in-vector init with-index i)
-                       (setf result (logior result (encode-value i value)))
-                       (finally (return result))))
-           :del (zdd-set-of-emptyset)
-           :cost 0))
-
+  (iter (with zdd = (zdd-set-of-emptyset))
+        (for val in-vector init with-index var)
+        (setf zdd (encode-effect zdd var val))
+        (finally (return zdd))))
 
 (defun encode-goal-op (goals)
-  (make-op :pre (zdd-by-integer
-                 (iter (with result = 0)
-                       (for (var . val) in-vector goals)
-                       (setf result (logior result (encode-value var val)))
-                       (finally (return result))))
-           :add (zdd-set-of-emptyset)
-           :del (zdd-set-of-emptyset)
-           :cost 0))
+  (iter (with zdd = (zdd-set-of-emptyset))
+        (for (var . val) in-vector goals)
+        (setf zdd (encode-precondition zdd var val))
+        (finally (return zdd))))
 
-(defun apply-op (op states)
-  (with-renaming ((- zdd-difference)
-                  (+ zdd-union)
-                  (/ zdd-divide-binate)
-                  (* zdd-product-binate))
-    (match op
-      ((op pre add del)
-       (+ (- (* pre (/ states pre)) del) add)))))
+;;;; apply operation
 
-(defun apply-axiom (op states)
-  "cf. Helmert09 aij p11 Sec 2 Definition 5 algorithm evaluate-axioms"
-  (with-renaming ((- zdd-difference)
-                  (+ zdd-union)
-                  (/ zdd-divide-binate)
-                  (* zdd-product-binate))
-    (match op
-      ((op pre add del)
-       (+ (- (* pre (/ states pre)) del) add)))))
-
-;; define a recursive procedure for action application?
-
+(defvar *apply-cache*)
 (defun apply-ops (ops states)
-  (%apply ops states 0))
-(defun %apply (ops states var)
+  (let ((*apply-cache* (make-hash-table :test 'equalp)))
+    (%apply ops states 0)))
+
+(defstruct apply-cache-key
+  (states-ptr 0 :type (UNSIGNED-BYTE 64))
+  (ops-ptr 0 :type (UNSIGNED-BYTE 64))
+  (index 0 :type (UNSIGNED-BYTE 64)))
+
+(defun apply-cache-key (states ops index)
+  (make-apply-cache-key :states-ptr (cffi:pointer-address (node-pointer states))
+                        :ops-ptr (cffi:pointer-address (node-pointer ops))
+                        :index index))
+
+(defun %apply (ops states index)
   (cond
-    ((<= (schema-size *state-schema*) var) states)
+    ((<= (schema-size (schema-ref *state-schema* +body+)) index) states)
     ((node-equal (zdd-emptyset) ops)    states)
     ((node-equal (zdd-emptyset) states) states)
     (t
-     (with-renaming ((- zdd-difference)
-                     (+ zdd-union)
-                     (/ zdd-divide-binate)
-                     (* zdd-product-binate)
-                     (_1 zdd-onset)
-                     (_0 zdd-offset)
-                     (set zdd-set)
-                     (unset zdd-unset))
-       (flet ((si () (schema-index *state-schema* (list var)))
-              (oi (x) (schema-index *operator-schema* (list var x))))
-         (symbol-macrolet ((true 0) (false 1) (add 2) (del 3))
-           (-> (zdd-emptyset)
-             (zdd-union (%apply (-> states (_1 (si)))
-                                (-> ops    (_1 (oi true)) (_1 (oi del)))
-                                (1+ var)))
-             (zdd-union (-> (%apply (-> states (_0 (si)))
-                                    (-> ops    (_1 (oi false)) (_1 (oi add)))
-                                    (1+ var))
-                          (set (si))))
-             (zdd-union (-> (%apply (-> states (_1 (si)))
-                                    (-> ops    (_1 (oi true)) (_0 (oi del)))
-                                    (1+ var))
-                          (set (si))))
-             (zdd-union (%apply (-> states (_0 (si)))
-                                (-> ops    (_1 (oi false)) (_0 (oi add)))
-                                (1+ var))))))))))
+     (let ((key (apply-cache-key states ops index)))
+       (match (gethash key *apply-cache*)
+         (nil
+          (setf (gethash key *apply-cache*) (%%apply ops states index)))
+         (result
+          result))))))
+
+(defun %%apply (ops states index)
+  (with-renaming ((+ zdd-union)
+                  (_1 zdd-onset)
+                  (_0 zdd-offset)
+                  (set zdd-set)
+                  (unset zdd-unset))
+    (flet ((si ()  (+ (schema-index *state-schema* +body+) index)) ;skips variable schema
+           (oi (x) (+ (schema-index *operator-schema* +body+) (* 4 index) x)))
+      ;; Apply operation should be linear in the zdd size.
+      ;; 
+      ;; Note: operators use a binate representation;
+      ;; thus +add+ bit and +del+ bit never becomes 1 simultaneously.
+      (-> (zdd-emptyset)
+        (+ (%apply (-> states (_1 (si)))
+                   ;;^^^ O(1) op since INDEX is always the top node
+                   (-> ops    (_1 (oi +true+)) (_1 (oi +del+)))
+                   ;;^^^ O(1) too -- +del+ may require x8 operations
+                   ;; When +true+ is true, +false+ should be false.
+                   ;; also when +del+ is true, +add+ should be false.
+                   (1+ index)))
+        (+ (-> (%apply (-> states (_0 (si)))
+                       ;;^^^ O(1) op since INDEX is always the top node
+                       (-> ops    (_1 (oi +false+)) (_1 (oi +add+)))
+                       (1+ index))
+             (set (si))))
+        (+ (-> (%apply (-> states (_1 (si)))
+                       (-> ops    (_1 (oi +true+)) (_0 (oi +del+)))
+                       ;; this allows +add+ to be 0 or 1.
+                       ;; due to this operation, INDEX is no longer the top node index in OPERATOR
+                       (1+ index))
+             (set (si))))
+        (+ (%apply (-> states (_0 (si)))
+                   (-> ops    (_1 (oi +false+)) (_0 (oi +add+)))
+                   (1+ index)))))))
+
+(defun apply-axiom (op states)
+  "cf. Helmert09 aij p11 Sec 2 Definition 5 algorithm evaluate-axioms"
+  (let ((*apply-cache* (make-hash-table :test 'equalp)))
+    (%applyx ops states 0)))
+
+(defun %applyx (ops states index)
+  (cond
+    ((<= (schema-size (schema-ref *state-schema* +body+)) index) states)
+    ((node-equal (zdd-emptyset) ops)    states)
+    ((node-equal (zdd-emptyset) states) states)
+    (t
+     (let ((key (apply-cache-key states ops index)))
+       (match (gethash key *apply-cache*)
+         (nil
+          (setf (gethash key *apply-cache*) (%%applyx ops states index)))
+         (result
+          result))))))
+
+(defun %%applyx (ops states index)
+  (with-renaming ((+ zdd-union)
+                  (_1 zdd-onset)
+                  (_0 zdd-offset)
+                  (set zdd-set)
+                  (unset zdd-unset))
+    (flet ((si ()  (+ (schema-index *state-schema* +body+) index)) ;skips variable schema
+           (oi (x) (+ (schema-index *operator-schema* +body+) (* 4 index) x)))
+      (-> (zdd-emptyset)
+        ;; (+ (%apply (-> states (_1 (si)))
+        ;;            ;;^^^ O(1) op since INDEX is always the top node
+        ;;            (-> ops    (_1 (oi +true+)) (_1 (oi +del+)))
+        ;;            ;;^^^ O(1) too -- +del+ may require x8 operations
+        ;;            ;; When +true+ is true, +false+ should be false.
+        ;;            ;; also when +del+ is true, +add+ should be false.
+        ;;            (1+ index)))
+        ;; (+ (-> (%apply (-> states (_0 (si)))
+        ;;                ;;^^^ O(1) op since INDEX is always the top node
+        ;;                (-> ops    (_1 (oi +false+)) (_1 (oi +add+)))
+        ;;                (1+ index))
+        ;;      (set (si))))
+        ;; (+ (-> (%apply (-> states (_1 (si)))
+        ;;                (-> ops    (_1 (oi +true+)) (_0 (oi +del+)))
+        ;;                ;; this allows +add+ to be 0 or 1.
+        ;;                ;; due to this operation, INDEX is no longer the top node index in OPERATOR
+        ;;                (1+ index))
+        ;;      (set (si))))
+        ;; (+ (%apply (-> states (_0 (si)))
+        ;;            (-> ops    (_1 (oi +false+)) (_0 (oi +add+)))
+        ;;            (1+ index)))
+        ))))
