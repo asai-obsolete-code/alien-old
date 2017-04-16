@@ -190,6 +190,8 @@
                    (-> ops    (_1 (oi +false+)) (_0 (oi +add+)))
                    (1+ index)))))))
 
+;;;; evaluate axioms
+
 (defun apply-axiom (op states)
   "cf. Helmert09 aij p11 Sec 2 Definition 5 algorithm evaluate-axioms"
   (let ((*apply-cache* (make-hash-table :test 'equalp)))
