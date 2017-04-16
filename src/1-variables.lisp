@@ -24,6 +24,7 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
 
 ;;;; unate encoding
 
+#+nil
 (defun sizes-unate ()
   "returns a list of variable encoding length"
   (match *sas*
@@ -34,6 +35,7 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
               (collect
                   (ceiling (log (length values) 2)))))))))
 
+#+nil
 (defun size-unate (n)
   (match *sas*
     ((sas variables)
@@ -41,20 +43,25 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
        ((variable values)
         (ceiling (log (length values) 2)))))))
 
+
+#+nil
 (defun state-encoding-length-unate ()
   (reduce #'+ (sizes-unate)))
 
+#+nil
 (defun positions-unate ()
   (iter (with current = 0)
         (for size in (sizes-unate))
         (collect current)
         (incf current size)))
 
+#+nil
 (defun position-unate (n)
   (elt (positions-unate) n))
 
 ;;;; binate encoding
 
+#+nil
 (defun sizes-binate ()
   "returns a list of variable encoding length"
   (match *sas*
@@ -65,6 +72,7 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
               (collect
                   (* 2 (ceiling (log (length values) 2))))))))))
 
+#+nil
 (defun size-binate (n)
   (match *sas*
     ((sas variables)
@@ -72,15 +80,18 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
        ((variable values)
         (* 2 (ceiling (log (length values) 2))))))))
 
+#+nil
 (defun state-encoding-length-binate ()
   (reduce #'+ (sizes-binate)))
 
+#+nil
 (defun positions-binate ()
   (iter (with current = 0)
         (for size in (sizes-binate))
         (collect current)
         (incf current size)))
 
+#+nil
 (defun position-binate (n)
   (elt (positions-binate) n))
 
