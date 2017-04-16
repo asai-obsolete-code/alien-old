@@ -222,7 +222,8 @@
 ;;;; evaluate axioms
 
 (defun apply-axioms (axiom-layers states)
-  "cf. Helmert09 aij p11 Sec 2 Definition 5 algorithm evaluate-axioms"
+  "cf. Helmert09 aij p11 Sec 2 Definition 5 algorithm evaluate-axioms
+Defaulting operation is also implemented as an operator. This is included in the first axiom layer."
   (let ((*apply-cache* (make-hash-table :test 'equalp)))
     (iter (for axioms in-vector axiom-layers)
           (iter (for tmp = (%apply axioms states 0))
