@@ -4,10 +4,10 @@
 ;;;; task definition
 
 (defstruct task
-  (operators (required) :type (array op))
-  (axioms    (required) :type (array op))
-  (init-op   (required) :type op)
-  (goal-op   (required) :type op)
+  (operators (required) :type cudd:zdd-node)
+  (axioms    (required) :type cudd:zdd-node)
+  (init-op   (required) :type cudd:zdd-node)
+  (goal-op   (required) :type cudd:zdd-node)
   mutex-groups)
 
 ;;;; schema definition
@@ -70,7 +70,7 @@
           goals
           mutex-groups)
      (make-task :operators (reduce #'zdd-union operators :key #'encode-operator)
-                :axioms    (reduce #'zdd-union axioms :key #'encode-axioms)
+                :axioms    (reduce #'zdd-union axioms :key #'encode-operator)
                 :init-op   (encode-init-op init)
                 :goal-op   (encode-goal-op goals)
                 ;; :mutex-groups (encode-mutex-groups mutex-groups)
@@ -78,15 +78,15 @@
 
 (defun encode-condition (zdd var val)
   (iter (for i below (integer-length val))
-        (setf zdd (! zdd (schema-index
-                          *operator-schema*
-                          +body+ var i (if (logbitp i val) +true+ +false+)))))
+        (setf zdd (zdd-change zdd (schema-index
+                                   *operator-schema*
+                                   +body+ var i (if (logbitp i val) +true+ +false+)))))
   zdd)
 (defun encode-effect (zdd var val)
   (iter (for i below (integer-length val))
-        (setf zdd (! zdd (schema-index
-                          *operator-schema*
-                          +body+ var i (if (logbitp i val) +add+ +del+)))))
+        (setf zdd (zdd-change zdd (schema-index
+                                   *operator-schema*
+                                   +body+ var i (if (logbitp i val) +add+ +del+)))))
   zdd)
 
 (defun encode-operator (operator)
@@ -109,7 +109,7 @@
                                       (encode-effect zdd affected newval)
                                       zdd)))))
          (iter (for i below (integer-length cost))
-               (when (logbitp i val)
+               (when (logbitp i cost)
                  (setf zdd (! zdd (schema-index *operator-schema* +cost+ i)))))
          zdd)))))
 
@@ -122,7 +122,7 @@
 (defun encode-goal-op (goals)
   (iter (with zdd = (zdd-set-of-emptyset))
         (for (var . val) in-vector goals)
-        (setf zdd (encode-precondition zdd var val))
+        (setf zdd (encode-condition zdd var val))
         (finally (return zdd))))
 
 ;;;; apply operation
@@ -192,7 +192,7 @@
 
 ;;;; evaluate axioms
 
-(defun apply-axiom (op states)
+(defun apply-axioms (ops states)
   "cf. Helmert09 aij p11 Sec 2 Definition 5 algorithm evaluate-axioms"
   (let ((*apply-cache* (make-hash-table :test 'equalp)))
     (%applyx ops states 0)))
