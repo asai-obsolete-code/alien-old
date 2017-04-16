@@ -17,6 +17,7 @@
               :cl-cudd
               :sas-parser
               :cl-syntax-interpol)
+ :serial t
  :components ((:file "src/0-package")
               (:file "src/1-external")
               (:file "src/1-schema")

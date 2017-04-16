@@ -4,7 +4,7 @@
 
 ;; (defvar *sas*)
 ;; (defparameter *sas* (fd-preprocess #p"sets/aaai16-opt/blocks/p01.pddl"))
-(defparameter *sas* (fd-preprocess #p"sets/aaai16-opt/airport/p01.pddl"))
+(defparameter *sas* (fd-preprocess (asdf:system-relative-pathname :alien "sets/misc-adl/psr-middle/p01.pddl")))
 
 (define-symbol-macro %variables% (sas-variables *sas*))
 
@@ -24,6 +24,7 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
 
 ;;;; unate encoding
 
+#+nil
 (defun sizes-unate ()
   "returns a list of variable encoding length"
   (match *sas*
@@ -34,6 +35,7 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
               (collect
                   (ceiling (log (length values) 2)))))))))
 
+#+nil
 (defun size-unate (n)
   (match *sas*
     ((sas variables)
@@ -41,20 +43,25 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
        ((variable values)
         (ceiling (log (length values) 2)))))))
 
+
+#+nil
 (defun state-encoding-length-unate ()
   (reduce #'+ (sizes-unate)))
 
+#+nil
 (defun positions-unate ()
   (iter (with current = 0)
         (for size in (sizes-unate))
         (collect current)
         (incf current size)))
 
+#+nil
 (defun position-unate (n)
   (elt (positions-unate) n))
 
 ;;;; binate encoding
 
+#+nil
 (defun sizes-binate ()
   "returns a list of variable encoding length"
   (match *sas*
@@ -65,6 +72,7 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
               (collect
                   (* 2 (ceiling (log (length values) 2))))))))))
 
+#+nil
 (defun size-binate (n)
   (match *sas*
     ((sas variables)
@@ -72,15 +80,18 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
        ((variable values)
         (* 2 (ceiling (log (length values) 2))))))))
 
+#+nil
 (defun state-encoding-length-binate ()
   (reduce #'+ (sizes-binate)))
 
+#+nil
 (defun positions-binate ()
   (iter (with current = 0)
         (for size in (sizes-binate))
         (collect current)
         (incf current size)))
 
+#+nil
 (defun position-binate (n)
   (elt (positions-binate) n))
 
@@ -92,6 +103,7 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
 ;; unknown -> 00
 ;; be careful not to forget encoding the most significant bits.
 
+#+nil
 (defun unate-binate (unate length)
   (let ((binate 0))
     (iter (for i below length)
@@ -99,6 +111,7 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
                 (if (logbitp i unate) #b10 #b01)))
     binate))
 
+#+nil
 (defun encode-value (n m)
   (ash (unate-binate m (size-unate n))
        (position-binate n)))
@@ -123,6 +136,7 @@ alternative encoding?  ------- not useful for binate zdd
 
 ;;;; operator encoding
 
+#+nil
 (defun operator-unate ()
   "returns a list of variable encoding length"
   (match *sas*
