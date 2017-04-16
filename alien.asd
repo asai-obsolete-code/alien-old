@@ -24,6 +24,7 @@
               (:file "src/1-util")
               (:file "src/1-variables")
               (:file "src/2-encode")
+              (:file "src/3-decode")
               (:file "src/3-search")
               (:file "src/4-1-heuristics")
               (:file "src/4-2-search-rule")
