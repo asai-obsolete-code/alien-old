@@ -103,6 +103,7 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
 ;; unknown -> 00
 ;; be careful not to forget encoding the most significant bits.
 
+#+nil
 (defun unate-binate (unate length)
   (let ((binate 0))
     (iter (for i below length)
@@ -110,6 +111,7 @@ Naming: size and position are derived from cl:byte-size and cl:byte-position
                 (if (logbitp i unate) #b10 #b01)))
     binate))
 
+#+nil
 (defun encode-value (n m)
   (ash (unate-binate m (size-unate n))
        (position-binate n)))
@@ -134,6 +136,7 @@ alternative encoding?  ------- not useful for binate zdd
 
 ;;;; operator encoding
 
+#+nil
 (defun operator-unate ()
   "returns a list of variable encoding length"
   (match *sas*
