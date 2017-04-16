@@ -1,12 +1,5 @@
 
-
 (in-package :alien)
-
-(defstruct op
-  (pre  (required) :type cudd:node)
-  (add  (required) :type cudd:node)
-  (del  (required) :type cudd:node)
-  (cost (required) :type fixnum))
 
 (defstruct task
   (operators (required) :type (array op))
@@ -15,34 +8,49 @@
   (goal-op   (required) :type op)
   mutex-groups)
 
+(defconstant +true+ 0)
+(defconstant +false+ 1)
+(defconstant +add+ 2)
+(defconstant +del+ 3)
+(defconstant +body+ 0)
+(defconstant +cost+ 1)
 
 (defun state-schema ()
   (match *sas*
     ((sas variables)
      (schema nil
-             (iter (for v in-vector variables)
-                   (collect
-                      (match v
-                        ((variable name values)
-                         (schema name
-                                 (iter (for i below (ceiling (log (length values) 2)))
-                                       (collect (unate))))))))))))
+             (schema :body
+                     (iter (for v in-vector variables)
+                           (collecting
+                            (match v
+                              ((variable name values)
+                               (schema name
+                                       (iter (for i below (ceiling (log (length values) 2)))
+                                             (collect (unate)))))))))
+             ;; 32 bit integer
+             (schema :cost (iter (repeat 32) (collect (unate))))))))
 
+(defun effect-bit-schema (name)
+  (schema name
+          (schema :true)
+          (schema :false)
+          (schema :add)
+          (schema :del)))
 
 (defun operator-schema ()
   (match *sas*
     ((sas variables)
      (schema nil
-             (iter (for v in-vector variables)
-                   (collect
-                      (match v
-                        ((variable name values)
-                         (schema name
-                                 (iter (for i below (ceiling (log (length values) 2)))
-                                       (collect (schema :true))
-                                       (collect (schema :false))
-                                       (collect (schema :add))
-                                       (collect (schema :del))))))))))))
+             (schema :body
+                     (iter (for v in-vector variables)
+                           (collecting
+                            (match v
+                              ((variable name values)
+                               (schema name
+                                       (iter (for i below (ceiling (log (length values) 2)))
+                                             (collecting (effect-bit-schema i)))))))))
+             ;; 32 bit integer
+             (schema :cost (iter (repeat 32) (collect (unate))))))))
 
 (defparameter *operator-schema* (operator-schema))
 (defparameter *state-schema*   (state-schema))
