@@ -20,6 +20,11 @@
 (defconstant +body+ 0)
 (defconstant +cost+ 1)
 
+(defun diff-bit-schema (name)
+  (schema name
+          (schema :add)
+          (schema :del)))
+
 (defun state-schema ()
   (match *sas*
     ((sas variables)
@@ -32,6 +37,14 @@
                                (schema name
                                        (iter (for i below (ceiling (log (length values) 2)))
                                              (collect (unate)))))))))
+             (schema :diff
+                     (iter (for v in-vector variables)
+                           (collecting
+                            (match v
+                              ((variable name values)
+                               (schema name
+                                       (iter (for i below (ceiling (log (length values) 2)))
+                                             (collect (diff-bit-schema i)))))))))
              ;; 32 bit integer
              (schema :cost (iter (repeat 32) (collect (unate))))))))
 
