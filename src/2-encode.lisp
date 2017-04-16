@@ -7,9 +7,7 @@
   (operators (required) :type cudd:zdd-node)
   (axioms    (required) :type (array cudd:zdd-node))
   (init-op   (required) :type cudd:zdd-node)
-  (goal-op   (required) :type cudd:zdd-node)
-  ;; mutex-groups
-  (axiom-layers (required) :type array))
+  (goal-op   (required) :type cudd:zdd-node))
 
 ;;;; schema definition
 
@@ -86,14 +84,7 @@
                                            (reduce #'zdd-union axioms :key #'encode-operator)
                                            result-type 'vector))))))
                 :init-op   (encode-init-op init)
-                :goal-op   (encode-goal-op goals)
-                ;; :mutex-groups (encode-mutex-groups mutex-groups)
-                :axiom-layers (iter (with layers = (make-array (length variables) :initial-element nil))
-                                    (for v in-vector variables with-index i)
-                                    (match v
-                                      ((variable :axiom-layer (and l (>= 0)))
-                                       (push (aref layers l) i)))
-                                    (finally (return layers)))))))
+                :goal-op   (encode-goal-op goals)))))
 
 (defun encode-condition (zdd var val)
   (iter (for i below (integer-length val))
@@ -121,12 +112,11 @@
                   (when (plusp require)
                     (setf zdd (encode-condition zdd affected require)))
                   (setf zdd
-                        (if-then-else (iter (with zdd = (zdd-set-of-emptyset))
-                                            (for (var . val) in-vector conditions)
-                                            (setf zdd (encode-condition zdd var val))
-                                            (finally (return zdd)))
-                                      (encode-effect zdd affected newval)
-                                      zdd)))))
+                        (zdd-union (iter (with zdd = (encode-effect zdd affected newval))
+                                         (for (var . val) in-vector conditions)
+                                         (setf zdd (encode-condition zdd var val))
+                                         (finally (return zdd)))
+                                   zdd)))))
          (iter (for i below (integer-length cost))
                (when (logbitp i cost)
                  (setf zdd (! zdd (schema-index *operator-schema* +cost+ i)))))
