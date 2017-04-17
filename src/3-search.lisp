@@ -15,6 +15,9 @@
        (setf *states* (apply-op init-op *states*))
        (iter (unless (node-equal (zdd-emptyset) (apply-op goal-op *states*))
                (signal 'solution-found :states *states*))
-             (setf *states* (apply-op operators *states*))
-             (setf *states* (apply-axiom axioms *states*)))))))
+             (-<>> *states*
+               (apply-op operators)
+               (apply-axiom axioms)
+               (zdd-union *states*)
+               (setf *states*)))))))
 
