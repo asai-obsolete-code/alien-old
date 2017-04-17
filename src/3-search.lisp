@@ -13,8 +13,9 @@
            :operator-schema *operator-schema*)
      (let ((*states* (zdd-emptyset)))
        (setf *states* (apply-op init-op *states*))
-       (iter (unless (node-equal (zdd-emptyset) (apply-op goal-op *states*))
-               (signal 'solution-found :states *states*))
+       (iter (let ((goals (apply-op goal-op *states*)))
+               (unless (node-equal (zdd-emptyset) goals)
+                 (signal 'solution-found :states goals)))
              (-<>> *states*
                (apply-op operators)
                (apply-axiom axioms)
