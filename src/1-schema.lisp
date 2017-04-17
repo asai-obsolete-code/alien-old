@@ -20,8 +20,8 @@
                                 (map 'vector (lambda (x) (prog1 acc (incf acc (schema-size x)))) children)))
         (make-schema :name name))))
 
-(defun unate (&optional name) (schema name))
-(defun binate (&optional name) (schema name (schema :true) (schema :false)))
+(defun unate () (schema :unate))
+(defun binate () (schema :binate (schema :true) (schema :false)))
 
 (defun schema-index (schema &rest indices)
   (labels ((rec (schema indices)

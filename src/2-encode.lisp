@@ -23,7 +23,7 @@
 (defun state-schema ()
   (match *sas*
     ((sas variables)
-     (schema nil
+     (schema :states
              (schema :body
                      (iter (for v in-vector variables)
                            (collecting
@@ -39,12 +39,12 @@
                               ((variable name values)
                                (schema name
                                        (iter (for i below (ceiling (log (length values) 2)))
-                                             (collect (effect-bit-schema i)))))))))
+                                             (collect (effect-bit-schema)))))))))
              ;; 32 bit integer
              (schema :cost (iter (repeat 32) (collect (unate))))))))
 
-(defun effect-bit-schema (name)
-  (schema name
+(defun effect-bit-schema ()
+  (schema :effect
           (schema :true)
           (schema :false)
           (schema :add)
@@ -53,7 +53,7 @@
 (defun operator-schema ()
   (match *sas*
     ((sas variables)
-     (schema nil
+     (schema :operator
              (schema :body
                      (iter (for v in-vector variables)
                            (collecting
@@ -61,7 +61,7 @@
                               ((variable name values)
                                (schema name
                                        (iter (for i below (ceiling (log (length values) 2)))
-                                             (collecting (effect-bit-schema i)))))))))
+                                             (collecting (effect-bit-schema)))))))))
              ;; 32 bit integer
              (schema :cost (iter (repeat 32) (collect (unate))))))))
 
