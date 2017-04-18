@@ -44,3 +44,6 @@
 (defun zip (&rest lists)
   (apply #'map 'list #'list lists))
 
+(defmacro nop (&body body)
+  (declare (ignore body))
+  nil)
