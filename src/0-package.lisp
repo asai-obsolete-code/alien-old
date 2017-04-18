@@ -64,3 +64,11 @@
                         (collect `(list ,arg)))
                 ',last-form (list ,last))
          ,last))))
+
+(defun bitvector->integer (bv)
+  (iter (for b in-vector bv)
+        (with res = 0)
+        (when (> b 0)
+          (incf res))
+        (ash res 1)
+        (finally (return res))))
