@@ -19,6 +19,7 @@
 (defconstant +del+ 3)
 (defconstant +body+ 0)
 (defconstant +cost+ 1)
+(defconstant +index+ 2)
 
 (defun state-schema ()
   (match *sas*
@@ -63,7 +64,9 @@
                                        (iter (for i below (ceiling (log (length values) 2)))
                                              (collecting (effect-bit-schema)))))))))
              ;; 32 bit integer
-             (schema :cost (iter (repeat 32) (collect (unate))))))))
+             (schema :cost (iter (repeat 32) (collect (unate))))
+             ;; 32 bit integer
+             (schema :index (iter (repeat 32) (collect (unate))))))))
 
 (defparameter *operator-schema* (operator-schema))
 (defparameter *state-schema*   (state-schema))
@@ -81,7 +84,7 @@
           init
           goals
           mutex-groups)
-     (make-task :operators (reduce #'zdd-union operators :key #'encode-operator)
+     (make-task :operators (reduce #'zdd-union (zip operators (iota (length operators))) :key #'encode-operator)
                 :axioms    (iter (with layers = (make-array (length variables) :initial-element nil))
                                  (for ax in-vector axioms)
                                  (push ax (aref layers (ematch ax
@@ -121,7 +124,7 @@
 (defun encode-operator (operator)
   (with-renaming ((! zdd-change))
     (ematch operator
-      ((operator prevail effects cost)
+      ((list (operator prevail effects cost) index)
        (let ((zdd (zdd-set-of-emptyset)))
          (iter (for (var . val) in-vector prevail)
                (setf zdd (encode-condition zdd var val)))
@@ -139,6 +142,9 @@
          (iter (for i below (integer-length cost))
                (when (logbitp i cost)
                  (setf zdd (! zdd (schema-index *operator-schema* +cost+ i)))))
+         (iter (for i below (integer-length index))
+               (when (logbitp i index)
+                 (setf zdd (! zdd (schema-index *operator-schema* +index+ i)))))
          zdd)))))
 
 (defun encode-init-op (init)
@@ -161,6 +167,30 @@
         (when (>= (variable-axiom-layer variable) 0)
           (setf zdd (encode-effect zdd var val)))
         (finally (return zdd))))
+
+(defun encode-operator-reference (operators)
+  (iter (for operator in-vector operators with-index index)
+        (with-renaming ((! zdd-change))
+          (ematch operator
+            ((operator prevail effects cost)
+             (let ((zdd (zdd-set-of-emptyset)))
+               (iter (for (var . val) in-vector prevail)
+                     (setf zdd (encode-condition zdd var val)))
+               (iter (for e in-vector effects)
+                     (match e
+                       ((effect conditions affected require newval)
+                        (when (plusp require)
+                          (setf zdd (encode-condition zdd affected require)))
+                        (setf zdd
+                              (zdd-union (iter (with zdd = (encode-effect zdd affected newval))
+                                               (for (var . val) in-vector conditions)
+                                               (setf zdd (encode-condition zdd var val))
+                                               (finally (return zdd)))
+                                         zdd)))))
+               (iter (for i below (integer-length index))
+                     (when (logbitp i index)
+                       (setf zdd (! zdd (schema-index *operator-schema* +cost+ i)))))
+               zdd))))))
 
 ;;;; apply operation
 
