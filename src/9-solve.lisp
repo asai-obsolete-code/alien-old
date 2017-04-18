@@ -6,7 +6,7 @@
   (with-manager ()
     (-> (fd-preprocess problem domain)
       (encode-sas-to-zdd)
-      (run-search))))
+      (run-search-single))))
 
 
 ;; (defparameter *sas* (fd-preprocess #p"sets/aaai16-opt/blocks/p01.pddl"))
