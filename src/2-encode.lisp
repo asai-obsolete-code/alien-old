@@ -206,7 +206,15 @@
 
 (defun %%apply (ops states index)
   (flet ((si ()  (+ (schema-index *state-schema* +body+) index)) ;skips variable schema
-         (oi (x) (+ (schema-index *operator-schema* +body+) (* 4 index) x)))
+         (oi (x) (+ (schema-index *operator-schema* +body+) (* 4 index) x))
+         (%apply (ops states index)
+           ;; prevent recursion to the real function (for better debugging)
+           (cond
+             ((node-equal (zdd-emptyset) ops)    (zdd-emptyset))
+             ((node-equal (zdd-emptyset) states) (zdd-emptyset))
+             ((<= (schema-size (schema-ref *state-schema* +body+)) index) states)
+             (t
+              (%apply ops states index)))))
     (with-renaming ((+ zdd-union)
                     (_1 zdd-onset)
                     (_0 zdd-offset)
