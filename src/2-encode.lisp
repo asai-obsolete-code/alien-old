@@ -179,12 +179,9 @@
           (setf zdd (encode-effect zdd var val)))
         (finally (return zdd))))
 
-;;;; apply operation
+;;;; apply cache
 
 (defvar *apply-cache*)
-(defun apply-op (ops states)
-  (let ((*apply-cache* (make-hash-table :test 'equalp)))
-    (%apply ops states 0)))
 
 (defstruct apply-cache-key
   (states-ptr 0 :type (UNSIGNED-BYTE 64))
@@ -195,6 +192,12 @@
   (make-apply-cache-key :states-ptr (cffi:pointer-address (node-pointer states))
                         :ops-ptr (cffi:pointer-address (node-pointer ops))
                         :index index))
+
+;;;; apply operation
+
+(defun apply-op (ops states)
+  (let ((*apply-cache* (make-hash-table :test 'equalp)))
+    (%apply ops states 0)))
 
 (defun %apply (ops states index)
   (cond
