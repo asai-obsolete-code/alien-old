@@ -321,6 +321,115 @@
              (unset (di +add+))
              (unset (di +del+))))))))
 
+;;;; unapply
+
+(defun unapply-op (ops states)
+  (let ((*apply-cache* (make-hash-table :test 'equalp)))
+    (%unapply ops states 0)))
+
+(defun %unapply (ops states index)
+  (let ((key (apply-cache-key states ops index)))
+    (match (gethash key *apply-cache*)
+      (nil
+       (setf (gethash key *apply-cache*) (%%unapply ops states index)))
+      (result
+       result))))
+
+(defun %%unapply (ops states index)
+  (flet ((si ()  (+ (schema-index *state-schema* +state-body+) index)) ;state index
+         (di (x) (+ (schema-index *state-schema* +state-action+) (* 4 index) x)) ;recording action
+         (oi (x) (+ (schema-index *operator-schema* +operator-body+) (* 4 index) x))
+         (%unapply (ops states index)
+           ;; prevent recursion to the real function (for better debugging)
+           (cond
+             ((node-equal (zdd-emptyset) ops)    (zdd-emptyset))
+             ((node-equal (zdd-emptyset) states) (zdd-emptyset))
+             ((<= (schema-size (schema-ref *state-schema* +state-body+)) index) states)
+             (t
+              (%unapply ops states index)))))
+    (with-renaming ((+ zdd-union)
+                    (_1 zdd-onset)
+                    (_0 zdd-offset)
+                    (set zdd-set)
+                    (unset zdd-unset))
+      ;; Apply operation should be linear in the zdd size.
+      ;; 
+      ;; Note: operators use a binate representation;
+      ;; thus +add+/+del+ bits never becomes 1 simultaneously.
+      ;; +true+/+false+ bits neither.
+      (-> (zdd-emptyset)
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_0 (si)))
+                           (1+ index))))
+          #+nil
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_1 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_0 (si)))
+                           (1+ index))))
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_1 (oi +del+)))
+                           (-> states (_0 (si)))
+                           (1+ index))
+               (zdd-dont-care index)))
+          #+nil
+          (+ (-> (%unapply (-> ops    (_1 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_0 (si)))
+                           (1+ index))
+                 (set (si))))
+          #+nil
+          (+ (-> (%unapply (-> ops    (_1 (oi +true+)) (_0 (oi +false+)) (_1 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_0 (si)))
+                           (1+ index))))
+          (+ (-> (%unapply (-> ops    (_1 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_1 (oi +del+)))
+                           (-> states (_0 (si)))
+                           (1+ index))
+               (set (si))))
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_1 (oi +false+)) (_0 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_0 (si)))
+                           (1+ index))))
+          #+nil
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_1 (oi +false+)) (_1 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_0 (si)))
+                           (1+ index))))
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_1 (oi +false+)) (_0 (oi +add+)) (_1 (oi +del+)))
+                           (-> states (_0 (si)))
+                           (1+ index))))
+          ;; 
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_1 (si)))
+                           (1+ index))
+                 (set (si))))
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_1 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_1 (si)))
+                           (1+ index))
+               (zdd-dont-care index)))
+          #+nil
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_1 (oi +del+)))
+                           (-> states (_1 (si)))
+                           (1+ index))))
+          (+ (-> (%unapply (-> ops    (_1 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_1 (si)))
+                           (1+ index))
+                 (set (si))))
+          (+ (-> (%unapply (-> ops    (_1 (oi +true+)) (_0 (oi +false+)) (_1 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_1 (si)))
+                           (1+ index))
+               (set (si))))
+          #+nil
+          (+ (-> (%unapply (-> ops    (_1 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_1 (oi +del+)))
+                           (-> states (_1 (si)))
+                           (1+ index))))
+          #+nil
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_1 (oi +false+)) (_0 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_1 (si)))
+                           (1+ index))))
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_1 (oi +false+)) (_1 (oi +add+)) (_0 (oi +del+)))
+                           (-> states (_1 (si)))
+                           (1+ index))
+               (set (si))))
+          #+nil
+          (+ (-> (%unapply (-> ops    (_0 (oi +true+)) (_1 (oi +false+)) (_0 (oi +add+)) (_1 (oi +del+)))
+                           (-> states (_1 (si)))
+                           (1+ index))))))))
+
 ;;;; evaluate axioms
 
 (defun apply-axiom (axiom-layers states)

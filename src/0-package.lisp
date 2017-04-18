@@ -7,7 +7,7 @@
 (defpackage alien
   (:use :cl :trivia :alexandria :iterate :cl-cudd :sas-parser :arrow-macros)
   (:shadowing-import-from :sas-parser :variable)
-  (:shadowing-import-from :trivia :<>)
+  (:shadowing-import-from :arrow-macros :<>)
   (:export :solve :find-domain
            :fd-preprocess
            :solution-found
