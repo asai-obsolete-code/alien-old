@@ -1,26 +1,39 @@
 
 (in-package :alien)
 
-(defun get-first-state (states)
-  (let ((bv (block nil
-              (map-ones states
-                        (lambda (bv)
-                          (return bv))))))
-    (iter (with zdd = (zdd-set-of-emptyset))
-          (for b in-vector bv with-index i)
-          (when (= 1 b)
-            (setf zdd (zdd-change zdd i)))
-          (finally (return zdd)))))
 
-(defun decode-parent-op (states schema)
-  (let ((from (schema-index schema :action))
-        (to   (schema-index schema :cost))
-        acc)
-    (map-ones states
-              (lambda (bv)
-                (push (subseq bv from to) acc)))
-    acc))
 
-(defun obtain-solutions (states schema)
-  (let ((op (decode-parent-op states schema)))
-    (unapply-op states )))
+(defun map-paths (task states callback)
+  "Iterate over the paths leading to the states stored in STATES.
+Calls CALLBACK with a list of operators on the path."
+  (match task
+    ((task :state-schema ss
+           :operator-schema os
+           :operators operators
+           :axioms axioms)
+     (do-ones (state-bv states)
+       (funcall
+        callback
+        (iter (for op = (follow-diagram
+                         operators
+                         (ash
+                          (bitvector->integer
+                           (subseq state-bv
+                                   (schema-index ss :action)
+                                   (schema-index ss :cost)))
+                          (schema-index os :body))))
+              (assert (= 1 (zdd-count-minterm op)))
+              (for op-index = (bitvector->integer
+                               (subseq (do-ones (op-bv op) (return op-bv))
+                                       (schema-index os :index))))
+              (for sas-op = (if (= op-index #b11111111111111111111111111111111)
+                                nil
+                                (aref (sas-operators *sas*) op-index)))
+              (while sas-op)
+              (collect sas-op)
+              (-<>> states
+                (unapply-op op)
+                (apply-axiom axioms)
+                (setf states))))))))
+
+

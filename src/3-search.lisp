@@ -45,4 +45,5 @@
     (solution-found (c)
       (match c
         ((solution-found states)
-         (obtain-solutions states (task-state-schema task)))))))
+         (map-paths task states
+                    (lambda (first-solution) (return-from run-search-single first-solution))))))))
