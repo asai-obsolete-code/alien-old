@@ -47,3 +47,6 @@
 (defmacro nop (&body body)
   (declare (ignore body))
   nil)
+
+(defun dump (zdd)
+  (map-ones zdd #'print))
