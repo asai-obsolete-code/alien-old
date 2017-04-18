@@ -39,7 +39,7 @@
   (= 1 (logcount x)))
 
 (defun required (&optional message)
-  (error "Missing a required slot"))
+  (error "Missing a required slot ~@[~a~]" message))
 
 (defun zip (&rest lists)
   (apply #'map 'list #'list lists))
