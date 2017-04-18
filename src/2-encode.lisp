@@ -193,9 +193,10 @@
 
 (defun %apply (ops states index)
   (cond
-    ((<= (schema-size (schema-ref *state-schema* +body+)) index) states)
-    ((node-equal (zdd-emptyset) ops)    states)
-    ((node-equal (zdd-emptyset) states) states)
+    ((node-equal (zdd-emptyset) ops)    (zdd-emptyset))
+    ((node-equal (zdd-emptyset) states) (zdd-emptyset))
+    ((<= (schema-size (schema-ref *state-schema* +body+)) index)
+     states)
     (t
      (let ((key (apply-cache-key states ops index)))
        (match (gethash key *apply-cache*)
