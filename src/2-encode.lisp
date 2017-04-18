@@ -156,10 +156,13 @@
          by #'zdd-union)))
 
 (defun encode-init-op (init)
-  (iter (with zdd = (zdd-set-of-emptyset))
-        (for val in-vector init with-index var)
-        (setf zdd (encode-effect zdd var val))
-        (finally (return zdd))))
+  (let ((zdd (zdd-set-of-emptyset)))
+    (iter (for val in-vector init with-index var)
+          (setf zdd (encode-effect zdd var val)))
+    ;; init op has index number = -1
+    (iter (for i below 32)
+          (setf zdd (! zdd (schema-index *operator-schema* +operator-index+ i))))
+    zdd))
 
 (defun encode-goal-op (goals)
   (iter (with zdd = (zdd-set-of-emptyset))
