@@ -2,9 +2,7 @@
 
 (in-package :alien)
 
-;; (defvar *sas*)
-;; (defparameter *sas* (fd-preprocess #p"sets/aaai16-opt/blocks/p01.pddl"))
-(defparameter *sas* (fd-preprocess (asdf:system-relative-pathname :alien "sets/misc-adl/psr-middle/p01.pddl")))
+(defvar *sas*)
 
 (define-symbol-macro %variables% (sas-variables *sas*))
 
