@@ -109,14 +109,14 @@
                 :operator-schema *operator-schema*))))
 
 (defun encode-condition (zdd var val)
-  (iter (for i below (integer-length val))
+  (iter (for i below (max 1 (integer-length val)))
         (setf zdd (zdd-change zdd (schema-index
                                    *operator-schema*
                                    +body+ var i (if (logbitp i val) +true+ +false+)))))
   zdd)
 
 (defun encode-effect (zdd var val)
-  (iter (for i below (integer-length val))
+  (iter (for i below (max 1 (integer-length val)))
         (setf zdd (zdd-change zdd (schema-index
                                    *operator-schema*
                                    +body+ var i (if (logbitp i val) +add+ +del+)))))
@@ -124,7 +124,6 @@
 
 (defun encode-operators (operators)
   (iter (for operator in-vector operators with-index index)
-        (print index)
         (reducing
          (with-renaming ((! zdd-change))
            (ematch operator
