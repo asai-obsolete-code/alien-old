@@ -34,6 +34,7 @@
   `(progn ,@body))
 
 (setf (fdefinition '$) #'uiop:run-program)
+(setf (fdefinition '!) #'cudd:zdd-change)
 
 (defun power-of-2-p (x)
   (= 1 (logcount x)))
