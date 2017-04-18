@@ -71,8 +71,8 @@
              ;; 32 bit integer
              (schema :index (iter (repeat 32) (collect (unate))))))))
 
-(defparameter *operator-schema* (operator-schema))
-(defparameter *state-schema*   (state-schema))
+(defvar *operator-schema*)
+(defvar *state-schema*)
 
 ;;;; encode SAS into ZDD
 
