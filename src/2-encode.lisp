@@ -200,18 +200,12 @@
     (%apply ops states 0)))
 
 (defun %apply (ops states index)
-  (cond
-    ((node-equal (zdd-emptyset) ops)    (zdd-emptyset))
-    ((node-equal (zdd-emptyset) states) (zdd-emptyset))
-    ((<= (schema-size (schema-ref *state-schema* +state-body+)) index)
-     states)
-    (t
-     (let ((key (apply-cache-key states ops index)))
-       (match (gethash key *apply-cache*)
-         (nil
-          (setf (gethash key *apply-cache*) (%%apply ops states index)))
-         (result
-          result))))))
+  (let ((key (apply-cache-key states ops index)))
+    (match (gethash key *apply-cache*)
+      (nil
+       (setf (gethash key *apply-cache*) (%%apply ops states index)))
+      (result
+       result))))
 
 (defun %%apply (ops states index)
   (flet ((si ()  (+ (schema-index *state-schema* +state-body+) index)) ;state index
@@ -340,18 +334,12 @@ Defaulting operation is also implemented as an operator. This is included in the
     states))
 
 (defun %applyx (ops states index)
-  (cond
-    ((node-equal (zdd-emptyset) ops)    (zdd-emptyset))
-    ((node-equal (zdd-emptyset) states) (zdd-emptyset))
-    ((<= (schema-size (schema-ref *state-schema* +state-body+)) index)
-     states)
-    (t
-     (let ((key (apply-cache-key states ops index)))
-       (match (gethash key *apply-cache*)
-         (nil
-          (setf (gethash key *apply-cache*) (%%applyx ops states index)))
-         (result
-          result))))))
+  (let ((key (apply-cache-key states ops index)))
+    (match (gethash key *apply-cache*)
+      (nil
+       (setf (gethash key *apply-cache*) (%%applyx ops states index)))
+      (result
+       result))))
 
 (defun %%applyx (ops states index)
   (flet ((si ()  (+ (schema-index *state-schema* +state-body+) index)) ;state index
