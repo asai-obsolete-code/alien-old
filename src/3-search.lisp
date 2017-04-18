@@ -9,11 +9,8 @@
   `(break (with-output-to-string (*standard-output*)
             ,@body)))
 
-(defun dump-states (&optional (*states* *states*))
-  (map-ones *states* #'print))
-
-(defun dump-states-monad (comment states)
-  (break* (print comment) (dump-states states))
+(defun dump-break (comment states)
+  (break* (print comment) (dump states))
   states)
 
 (defun run-search (*task*)
@@ -23,21 +20,26 @@
            :state-schema *state-schema*
            :operator-schema *operator-schema*)
      (let ((*states* (zdd-set-of-emptyset)))
-       (break* (print :zero) (dump-states))
+       #+nil
+       (dump-break :zero *states*)
        (setf *states* (apply-op init-op *states*))
-       (break* (print :init) (dump-states))
+       #+nil
+       (dump-break :init *states*)
        (iter (let ((goals (apply-op goal-op *states*)))
-               (->> goals
-                 (dump-states-monad :goals))
                (unless (node-equal (zdd-emptyset) goals)
+                 (->> goals
+                   (dump-break :goals))
                  (signal 'solution-found :states goals)))
              (-<>> *states*
                (apply-op operators)
-               (dump-states-monad :op)
+               #+nil
+               (dump-break :op)
                (apply-axiom axioms)
-               (dump-states-monad :axiom)
+               #+nil
+               (dump-break :axiom)
                (zdd-union *states*)
-               (dump-states-monad :union)
+               #+nil
+               (dump-break :union)
                (setf *states*)))))))
 
 (defun run-search-single (task)

@@ -31,6 +31,7 @@ Calls CALLBACK with a list of operators on the path."
                                 (aref (sas-operators *sas*) op-index)))
               (while sas-op)
               (collect sas-op)
+              (dump-break :follow op)
               (-<>> states
                 (unapply-op op)
                 (apply-axiom axioms)
