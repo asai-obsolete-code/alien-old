@@ -329,8 +329,88 @@
 Defaulting operation is also implemented as an operator. This is included in the first axiom layer."
   (let ((*apply-cache* (make-hash-table :test 'equalp)))
     (iter (for axioms in-vector axiom-layers)
-          (iter (for tmp = (%apply axioms states 0))
+          (iter (for tmp = (%applyx axioms states 0))
                 (until (node-equal states tmp))
                 (setf states tmp)))
     states))
 
+(defun %applyx (ops states index)
+  (cond
+    ((node-equal (zdd-emptyset) ops)    (zdd-emptyset))
+    ((node-equal (zdd-emptyset) states) (zdd-emptyset))
+    ((<= (schema-size (schema-ref *state-schema* +state-body+)) index)
+     states)
+    (t
+     (let ((key (apply-cache-key states ops index)))
+       (match (gethash key *apply-cache*)
+         (nil
+          (setf (gethash key *apply-cache*) (%%applyx ops states index)))
+         (result
+          result))))))
+
+(defun %%applyx (ops states index)
+  (flet ((si ()  (+ (schema-index *state-schema* +state-body+) index)) ;state index
+         (oi (x) (+ (schema-index *operator-schema* +operator-body+) (* 4 index) x))
+         (%applyx (ops states index)
+           ;; prevent recursion to the real function (for better debugging)
+           (cond
+             ((node-equal (zdd-emptyset) ops)    (zdd-emptyset))
+             ((node-equal (zdd-emptyset) states) (zdd-emptyset))
+             ((<= (schema-size (schema-ref *state-schema* +state-body+)) index) states)
+             (t
+              (%applyx ops states index)))))
+    (with-renaming ((+ zdd-union)
+                    (_1 zdd-onset)
+                    (_0 zdd-offset)
+                    (set zdd-set)
+                    (unset zdd-unset))
+      ;; Applyx operation should be linear in the zdd size.
+      ;; 
+      ;; Note: operators use a binate representation;
+      ;; thus +add+/+del+ bits never becomes 1 simultaneously.
+      ;; +true+/+false+ bits neither.
+      ;;
+      ;; unlike apply, it does not modify the action fields.
+      (-> (zdd-emptyset)
+        (+ (%applyx (-> ops    (_1 (oi +true+)) (_1 (oi +del+)))
+                    (-> states (_1 (si)))
+                    (1+ index)))
+        (+ (-> (%applyx (-> ops    (_1 (oi +true+)) (_1 (oi +add+)))
+                        (-> states (_1 (si)))
+                        (1+ index))
+             (set (si))))
+        (+ (-> (%applyx (-> ops    (_1 (oi +true+)) (_0 (oi +add+)) (_0 (oi +del+)))
+                        (-> states (_1 (si)))
+                        (1+ index))
+             (set (si))))
+        (+ (%applyx (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_1 (oi +del+)))
+                    (-> states (_1 (si)))
+                    (1+ index)))
+        (+ (-> (%applyx (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_1 (oi +add+)))
+                        (-> states (_1 (si)))
+                        (1+ index))
+             (set (si))))
+        (+ (-> (%applyx (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_0 (oi +del+)))
+                        (-> states (_1 (si)))
+                        (1+ index))
+             (set (si))))
+        (+ (-> (%applyx (-> ops    (_1 (oi +false+)) (_1 (oi +add+)))
+                        (-> states (_0 (si)))
+                        (1+ index))
+             (set (si))))
+        (+ (%applyx (-> ops    (_1 (oi +false+)) (_1 (oi +del+)))
+                    (-> states (_0 (si)))
+                    (1+ index)))
+        (+ (%applyx (-> ops    (_1 (oi +false+)) (_0 (oi +add+)) (_0 (oi +del+)))
+                    (-> states (_0 (si)))
+                    (1+ index)))
+        (+ (-> (%applyx (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_1 (oi +add+)))
+                        (-> states (_0 (si)))
+                        (1+ index))
+             (set (si))))
+        (+ (%applyx (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_1 (oi +del+)))
+                    (-> states (_0 (si)))
+                    (1+ index)))
+        (+ (%applyx (-> ops    (_0 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_0 (oi +del+)))
+                    (-> states (_0 (si)))
+                    (1+ index)))))))
