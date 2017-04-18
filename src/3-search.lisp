@@ -27,6 +27,8 @@
        (setf *states* (apply-op init-op *states*))
        (break* (print :init) (dump-states))
        (iter (let ((goals (apply-op goal-op *states*)))
+               (->> goals
+                 (dump-states-monad :goals))
                (unless (node-equal (zdd-emptyset) goals)
                  (signal 'solution-found :states goals)))
              (-<>> *states*
@@ -38,3 +40,9 @@
                (dump-states-monad :union)
                (setf *states*)))))))
 
+(defun run-search-single (task)
+  (handler-case (run-search task)
+    (solution-found (c)
+      (match c
+        ((solution-found states)
+         (obtain-solutions states (task-state-schema task)))))))

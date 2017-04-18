@@ -19,7 +19,7 @@
 
 ;; common definitions
 
-(define-condition solution-found () ((states :initarg states)))
+(define-condition solution-found () ((states :initarg states :reader solution-found-states)))
 
 (defvar *fd-home* (asdf:system-relative-pathname :alien "FastDownward/"))
 
