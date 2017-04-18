@@ -40,3 +40,7 @@
 
 (defun required (&optional message)
   (error "Missing a required slot"))
+
+(defun zip (&rest lists)
+  (apply #'map 'list #'list lists))
+
