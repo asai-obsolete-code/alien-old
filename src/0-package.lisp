@@ -70,5 +70,5 @@
         (with res = 0)
         (when (> b 0)
           (incf res))
-        (ash res 1)
+        (setf res (ash res 1))
         (finally (return res))))
