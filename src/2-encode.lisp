@@ -165,10 +165,13 @@
     zdd))
 
 (defun encode-goal-op (goals)
-  (iter (with zdd = (zdd-set-of-emptyset))
-        (for (var . val) in-vector goals)
-        (setf zdd (encode-condition zdd var val))
-        (finally (return zdd))))
+  (let ((zdd (zdd-set-of-emptyset)))
+    (iter (for (var . val) in-vector goals)
+          (setf zdd (encode-condition zdd var val)))
+    ;; init op has index number = -2
+    (iter (for i below 31)
+          (setf zdd (! zdd (schema-index *operator-schema* +operator-index+ i))))
+    zdd))
 
 (defun encode-default-op (init variables)
   "Encode a defaulting operation for derived variables, used before evaluating axioms."
