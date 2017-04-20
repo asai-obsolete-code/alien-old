@@ -27,8 +27,7 @@
        (dump-break :init *states*)
        (iter (let ((goals (apply-op goal-op *states*)))
                (unless (node-equal (zdd-emptyset) goals)
-                 (->> goals
-                   (dump-break :goals))
+                 (dump-break :goals goals)
                  (signal 'solution-found :states goals)))
              (-<>> *states*
                (apply-op operators)

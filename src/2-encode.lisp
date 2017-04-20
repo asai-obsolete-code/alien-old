@@ -339,8 +339,9 @@
        result))))
 
 (defun %%unapply (ops states index)
+  (dump ops)
+  (dump states)
   (flet ((si ()  (+ (schema-index *state-schema* +state-body+) index)) ;state index
-         (di (x) (+ (schema-index *state-schema* +state-action+) (* 4 index) x)) ;recording action
          (oi (x) (+ (schema-index *operator-schema* +operator-body+) (* 4 index) x))
          (%unapply (ops states index)
            ;; prevent recursion to the real function (for better debugging)
@@ -349,7 +350,8 @@
              ((node-equal (zdd-emptyset) states) (zdd-emptyset))
              ((<= (schema-size (schema-ref *state-schema* +state-body+)) index) states)
              (t
-              (%unapply ops states index)))))
+              (dump
+               (%unapply ops states index))))))
     (with-renaming ((+ zdd-union)
                     (_1 zdd-onset)
                     (_0 zdd-offset)
@@ -375,8 +377,7 @@
           #+nil
           (+ (-> (%unapply (-> ops    (_1 (oi +true+)) (_0 (oi +false+)) (_0 (oi +add+)) (_0 (oi +del+)))
                            (-> states (_0 (si)))
-                           (1+ index))
-                 (set (si))))
+                           (1+ index))))
           #+nil
           (+ (-> (%unapply (-> ops    (_1 (oi +true+)) (_0 (oi +false+)) (_1 (oi +add+)) (_0 (oi +del+)))
                            (-> states (_0 (si)))
