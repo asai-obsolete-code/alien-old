@@ -66,9 +66,11 @@
          ,last))))
 
 (defun bitvector->integer (bv)
-  (iter (for b in-vector bv)
+  (iter (for b in-vector bv with-index i)
         (with res = 0)
         (when (> b 0)
-          (incf res))
-        (setf res (ash res 1))
+          (setf (ldb (byte 1 i) res) 1))
         (finally (return res))))
+
+(assert (= (bitvector->integer #*10000) 1))
+(assert (= (bitvector->integer #*01000) 2))
